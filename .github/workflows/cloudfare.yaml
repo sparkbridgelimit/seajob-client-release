@@ -37,7 +37,7 @@ jobs:
         with:
           repository: sparkbridgelimit/seajob-client
           ref: deploy
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.RELEASE_TOKEN }}
 
       # 在非 Windows 系统使用 jq 读取版本号
       - name: Read version from tauri.conf.json (Non-Windows)
