@@ -45,7 +45,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-
+      # 删除项目根目录下src-tauri/resources/下的所有资源
+      - name: Remove all resources from src-tauri/resources
+        run: rm -rf src-tauri/resources/*
+      
+      # 修改tauri.conf.json tauri.bundle.resources数组改成 ["resources/${{ matrix.executor_file_name }}"]
+      - name: Update tauri.conf.json to set tauri.bundle.resources
+        run: |
+          jq '.tauri.bundle.resources = ["resources/${{ matrix.executor_file_name }}"]' tauri.conf.json > tauri.conf.tmp.json
+          mv tauri.conf.tmp.json tauri.conf.json
+      
       - uses: robinraju/release-downloader@v1
         with:
           repository: 'sparkbridgelimit/seajob-executor'
@@ -63,6 +72,7 @@ jobs:
             pwd
           fi
         shell: bash
+
       # - name: Enable corepack
       #   run: corepack enable
 
