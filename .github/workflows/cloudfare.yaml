@@ -17,14 +17,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - platform: 'macos-latest'
-            args: '--target aarch64-apple-darwin'
-            executor_file_name: 'seajob-executor-macos-arm64'
-            bundle_dir: './src-tauri/target/aarch64-apple-darwin/release/bundle/macos'
-          - platform: 'macos-latest'
-            args: '--target x86_64-apple-darwin'
-            executor_file_name: 'seajob-executor-macos-x64'
-            bundle_dir: './src-tauri/target/x86_64-apple-darwin/release/bundle/macos'
+          # - platform: 'macos-latest'
+          #   args: '--target aarch64-apple-darwin'
+          #   executor_file_name: 'seajob-executor-macos-arm64'
+          #   bundle_dir: './src-tauri/target/aarch64-apple-darwin/release/bundle/macos'
+          # - platform: 'macos-latest'
+          #   args: '--target x86_64-apple-darwin'
+          #   executor_file_name: 'seajob-executor-macos-x64'
+          #   bundle_dir: './src-tauri/target/x86_64-apple-darwin/release/bundle/macos'
           - platform: 'windows-latest'
             args: ''
             executor_file_name: 'seajob-executor-windows-x64.exe'
@@ -66,7 +66,7 @@ jobs:
         run: |
           $json = Get-Content src-tauri/tauri.conf.json | ConvertFrom-Json
           $json.tauri.bundle.resources = @("resources/${{ matrix.executor_file_name }}")
-          $json | ConvertTo-Json -Compress | Set-Content src-tauri/tauri.conf.json
+          $json | ConvertTo-Json -Compress -Depth 100 | Set-Content src-tauri/tauri.conf.json
         shell: pwsh
 
       - name: Update tauri.conf.json (Non-Windows)
