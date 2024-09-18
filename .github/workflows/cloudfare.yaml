@@ -17,18 +17,18 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # - platform: 'macos-latest'
-          #   args: '--target aarch64-apple-darwin'
-          #   executor_file_name: 'seajob-executor-macos-arm64'
-          #   bundle_dir: './src-tauri/target/aarch64-apple-darwin/release/bundle/macos'
+          - platform: 'macos-latest'
+            args: '--target aarch64-apple-darwin'
+            executor_file_name: 'seajob-executor-macos-arm64'
+            bundle_dir: './src-tauri/target/aarch64-apple-darwin/release/bundle/macos'
           # - platform: 'macos-latest'
           #   args: '--target x86_64-apple-darwin'
           #   executor_file_name: 'seajob-executor-macos-x64'
           #   bundle_dir: './src-tauri/target/x86_64-apple-darwin/release/bundle/macos'
-          - platform: 'windows-latest'
-            args: ''
-            executor_file_name: 'seajob-executor-windows-x64.exe'
-            bundle_dir: './src-tauri/target/release/bundle/windows'
+          # - platform: 'windows-latest'
+          #   args: ''
+          #   executor_file_name: 'seajob-executor-windows-x64.exe'
+          #   bundle_dir: './src-tauri/target/release/bundle/windows'
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -119,8 +119,12 @@ jobs:
         with:
           repository: 'sparkbridgelimit/seajob-client-release'
           latest: true
-          # fileName: ${{ matrix.executor_file_name }}
-          out-file-path: 'release'
+          out-file-path: './releases-assets'  # 将下载的文件存储到独立目录
+
+      - name: List release assets (debug)
+        run: |
+          ls -la ./releases-assets
+
 
       - uses: ryand56/r2-upload-action@latest
         with:
@@ -128,5 +132,5 @@ jobs:
           r2-access-key-id: ${{ secrets.R2_ACCESS_KEY_ID }}
           r2-secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           r2-bucket: ${{ secrets.R2_BUCKET }}
-          source-dir: 'release'
-          destination-dir: ./release/${{ github.ref }}/${{ matrix.executor_file_name }}
+          source-dir: '指向上一步下载好的文件目录'
+          destination-dir: ./releases-assets/${{ github.ref }}/${{ matrix.executor_file_name }}
