@@ -3,7 +3,7 @@ name: 'publish'
 on:
   push:
     branches:
-      - deploy
+      - cf
 
 concurrency:
   group: release-${{ github.ref }}
@@ -20,12 +20,15 @@ jobs:
           - platform: 'macos-latest'
             args: '--target aarch64-apple-darwin'
             executor_file_name: 'seajob-executor-macos-arm64'
-          # - platform: 'macos-latest'
-          #   args: '--target x86_64-apple-darwin'
-          #   executor_file_name: 'seajob-executor-macos-x64'
-          # - platform: 'windows-latest'
-          #   args: ''
-          #   executor_file_name: 'seajob-executor-windows-x64.exe'
+            bundle_dir: './src-tauri/target/aarch64-apple-darwin/release/bundle/macos'
+          - platform: 'macos-latest'
+            args: '--target x86_64-apple-darwin'
+            executor_file_name: 'seajob-executor-macos-x64'
+            bundle_dir: './src-tauri/target/x86_64-apple-darwin/release/bundle/macos'
+          - platform: 'windows-latest'
+            args: ''
+            executor_file_name: 'seajob-executor-windows-x64.exe'
+            bundle_dir: './src-tauri/target/release/bundle/windows'
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -34,6 +37,22 @@ jobs:
         with:
           repository: sparkbridgelimit/seajob-client
           ref: deploy
+
+      # 在非 Windows 系统使用 jq 读取版本号
+      - name: Read version from tauri.conf.json (Non-Windows)
+        if: runner.os != 'Windows'
+        run: |
+          VERSION=$(jq -r '.package.version' src-tauri/tauri.conf.json)
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+        shell: bash
+      
+      # 在 Windows 系统使用 PowerShell 读取版本号
+      - name: Read version from tauri.conf.json (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          $json = Get-Content src-tauri/tauri.conf.json | ConvertFrom-Json
+          echo "VERSION=$($json.package.version)" >> $env:GITHUB_ENV
+        shell: pwsh
 
       - name: install dependencies (ubuntu only)
         if: matrix.platform == 'ubuntu-22.04' # This must match the platform value defined above.
@@ -46,20 +65,32 @@ jobs:
         with:
           node-version: '20'
 
-      - name: pwd
-        run: pwd
-      - name: List files for debugging
-        run: ls -la src-tauri
+      - name: Remove all resources from src-tauri/resources (Windows)
+        if: ${{ runner.os == 'Windows' }}
+        run: |
+          Remove-Item -Recurse -Force src-tauri/resources/*
+        shell: pwsh
 
-      # 删除项目根目录下src-tauri/resources/下的所有资源
-      - name: Remove all resources from src-tauri/resources
-        run: rm -rf src-tauri/resources/*
-      
-      # 修改 src-tauri/tauri.conf.json 中的 tauri.bundle.resources 数组
-      - name: Update tauri.conf.json to set tauri.bundle.resources
+      - name: Remove all resources from src-tauri/resources (Non-Windows)
+        if: ${{ runner.os != 'Windows' }}
+        run: |
+          rm -rf src-tauri/resources/*
+        shell: bash
+    
+      - name: Update tauri.conf.json (Windows)
+        if: ${{ runner.os == 'Windows' }}
+        run: |
+          $json = Get-Content src-tauri/tauri.conf.json | ConvertFrom-Json
+          $json.tauri.bundle.resources = @("resources/${{ matrix.executor_file_name }}")
+          $json | ConvertTo-Json -Compress -Depth 100 | Set-Content src-tauri/tauri.conf.json
+        shell: pwsh
+
+      - name: Update tauri.conf.json (Non-Windows)
+        if: ${{ runner.os != 'Windows' }}
         run: |
           jq '.tauri.bundle.resources = ["resources/${{ matrix.executor_file_name }}"]' src-tauri/tauri.conf.json > src-tauri/tauri.conf.tmp.json
           mv src-tauri/tauri.conf.tmp.json src-tauri/tauri.conf.json
+        shell: bash
       
       - uses: robinraju/release-downloader@v1
         with:
@@ -67,17 +98,6 @@ jobs:
           latest: true
           fileName: ${{ matrix.executor_file_name }}
           out-file-path: 'src-tauri/resources'
-
-      - name: List src-tauri/resources directory (debug)
-        run: |
-          if [ "$RUNNER_OS" == "Windows" ]; then
-            dir src-tauri/resources
-          else
-            ls -la /Users/runner/work/seajob-client-release
-            ls -la src-tauri/resources
-            pwd
-          fi
-        shell: bash
 
       - name: Enable corepack
         run: corepack enable
@@ -98,16 +118,38 @@ jobs:
 
       - name: Build Vite + Tauri
         run: pnpm build
+      
+      - name: Import Code-Signing Certificate
+        uses: apple-actions/import-codesign-certs@v3
+        if: matrix.platform == 'macos-latest'
+        with: 
+          p12-file-base64: ${{ secrets.CERTIFICATES_P12 }}
+          p12-password: ${{ secrets.CERTIFICATES_P12_PASSWORD }}
 
       - uses: tauri-apps/tauri-action@dev
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
           TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
         with:
-          tagName: app-v__VERSION__
+          tagName: __VERSION__
           releaseName: '海投助手 v__VERSION__'
-          releaseBody: 'See the assets to download this version and install.'
-          releaseDraft: true
+          releaseBody: 'See the assets to download this version and install.  '
+          releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
 
+      - uses: robinraju/release-downloader@v1
+        with:
+          repository: 'sparkbridgelimit/seajob-client-release'
+          out-file-path: 'releases-assets'  # 将下载的文件存储到独立目录
+          tag: ${{ env.VERSION }}
+          fileName: '*'
+
+      - uses: ryand56/r2-upload-action@latest
+        with:
+          r2-account-id: ${{ secrets.R2_ACCOUNT_ID }}
+          r2-access-key-id: ${{ secrets.R2_ACCESS_KEY_ID }}
+          r2-secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          r2-bucket: ${{ secrets.R2_BUCKET }}
+          source-dir: 'releases-assets'
+          destination-dir: ./release/${{ env.VERSION }}
