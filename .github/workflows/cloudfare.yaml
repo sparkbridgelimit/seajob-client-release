@@ -49,11 +49,6 @@ jobs:
         with:
           node-version: '20'
 
-      - name: pwd
-        run: pwd
-      - name: List files for debugging
-        run: ls -la src-tauri
-
       # 删除项目根目录下src-tauri/resources/下的所有资源
       - name: Remove all resources from src-tauri/resources
         run: rm -rf src-tauri/resources/*
@@ -70,17 +65,6 @@ jobs:
           latest: true
           fileName: ${{ matrix.executor_file_name }}
           out-file-path: 'src-tauri/resources'
-
-      - name: List src-tauri/resources directory (debug)
-        run: |
-          if [ "$RUNNER_OS" == "Windows" ]; then
-            dir src-tauri/resources
-          else
-            ls -la /Users/runner/work/seajob-client-release
-            ls -la src-tauri/resources
-            pwd
-          fi
-        shell: bash
 
       - name: Enable corepack
         run: corepack enable
