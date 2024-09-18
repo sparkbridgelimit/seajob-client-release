@@ -21,14 +21,14 @@ jobs:
             args: '--target aarch64-apple-darwin'
             executor_file_name: 'seajob-executor-macos-arm64'
             bundle_dir: './src-tauri/target/aarch64-apple-darwin/release/bundle/macos'
-          # - platform: 'macos-latest'
-          #   args: '--target x86_64-apple-darwin'
-          #   executor_file_name: 'seajob-executor-macos-x64'
-          #   bundle_dir: './src-tauri/target/x86_64-apple-darwin/release/bundle/macos'
-          # - platform: 'windows-latest'
-          #   args: ''
-          #   executor_file_name: 'seajob-executor-windows-x64.exe'
-          #   bundle_dir: './src-tauri/target/release/bundle/windows'
+          - platform: 'macos-latest'
+            args: '--target x86_64-apple-darwin'
+            executor_file_name: 'seajob-executor-macos-x64'
+            bundle_dir: './src-tauri/target/x86_64-apple-darwin/release/bundle/macos'
+          - platform: 'windows-latest'
+            args: ''
+            executor_file_name: 'seajob-executor-windows-x64.exe'
+            bundle_dir: './src-tauri/target/release/bundle/windows'
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -137,11 +137,6 @@ jobs:
           out-file-path: 'releases-assets'  # 将下载的文件存储到独立目录
           tag: ${{ env.VERSION }}
           fileName: '*'
-
-      - name: List release assets (debug)
-        run: |
-          ls -la ./releases-assets
-
 
       - uses: ryand56/r2-upload-action@latest
         with:
