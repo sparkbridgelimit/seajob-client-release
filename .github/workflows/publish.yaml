@@ -17,12 +17,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - platform: 'macos-latest' # for Arm based macs (M1 and above).
+          - platform: 'macos-latest'
             args: '--target aarch64-apple-darwin'
-          - platform: 'macos-latest' # for Intel based macs.
+            executor_file_name: 'seajob-executor-macos-arm64'
+          - platform: 'macos-latest'
             args: '--target x86_64-apple-darwin'
+            executor_file_name: 'seajob-executor-macos-x64'
           - platform: 'windows-latest'
             args: ''
+            executor_file_name: 'seajob-executor-windows-x64.exe'
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -43,22 +46,31 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Enable corepack
-        run: corepack enable
-
-      - name: install Rust stable 1.80
-        uses: dtolnay/rust-toolchain@1.80
+      - uses: robinraju/release-downloader@v1
         with:
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+          repository: 'sparkbridgelimit/seajob-executor'
+          latest: true
+          fileName: ${{ matrix.executor_file_name }}
 
-      - name: Rust cache
-        uses: swatinem/rust-cache@v2
-        with:
-          workspaces: './src-tauri -> target'
+      # - name: Enable corepack
+      #   run: corepack enable
 
-      - name: install frontend dependencies
-        # If you don't have `beforeBuildCommand` configured you may want to build your frontend here too.
-        run: pnpm install # change this to npm or pnpm depending on which one you use.
+      # - name: install Rust stable 1.80
+      #   uses: dtolnay/rust-toolchain@1.80
+      #   with:
+      #     targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
-      - name: Build Vite + Tauri
-        run: pnpm build
+      # - name: Rust cache
+      #   uses: swatinem/rust-cache@v2
+      #   with:
+      #     workspaces: './src-tauri -> target'
+
+      # - name: install frontend dependencies
+      #   # If you don't have `beforeBuildCommand` configured you may want to build your frontend here too.
+      #   run: pnpm install # change this to npm or pnpm depending on which one you use.
+
+      # - name: Build Vite + Tauri
+      #   run: pnpm build
+
+      
+
