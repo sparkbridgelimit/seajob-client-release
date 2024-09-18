@@ -59,6 +59,7 @@ jobs:
             dir downloaded-assets
           else
             ls -la downloaded-assets
+            pwd
           fi
         shell: bash
       # - name: Enable corepack
