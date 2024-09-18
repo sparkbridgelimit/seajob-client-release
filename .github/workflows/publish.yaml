@@ -45,6 +45,7 @@ jobs:
       #   uses: actions/setup-node@v4
       #   with:
       #     node-version: '20'
+
       - name: pwd
         run: pwd
       - name: List files for debugging
@@ -65,15 +66,15 @@ jobs:
           repository: 'sparkbridgelimit/seajob-executor'
           latest: true
           fileName: ${{ matrix.executor_file_name }}
-          out-file-path: 'downloaded-assets'
+          out-file-path: 'src-tauri/resources'
 
-      - name: List downloaded-assets directory (debug)
+      - name: List src-tauri/resources directory (debug)
         run: |
           if [ "$RUNNER_OS" == "Windows" ]; then
-            dir downloaded-assets
+            dir src-tauri/resources
           else
             ls -la /Users/runner/work/seajob-client-release
-            ls -la downloaded-assets
+            ls -la src-tauri/resources
             pwd
           fi
         shell: bash
