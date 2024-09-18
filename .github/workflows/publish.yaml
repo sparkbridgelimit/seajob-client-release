@@ -58,6 +58,7 @@ jobs:
           if [ "$RUNNER_OS" == "Windows" ]; then
             dir downloaded-assets
           else
+            ls -la /Users/runner/work/seajob-client-release
             ls -la downloaded-assets
             pwd
           fi
