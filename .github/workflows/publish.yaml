@@ -45,6 +45,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+      
+      - name: List files for debugging
+        run: ls -la src-tauri
+
       # 删除项目根目录下src-tauri/resources/下的所有资源
       - name: Remove all resources from src-tauri/resources
         run: rm -rf src-tauri/resources/*
