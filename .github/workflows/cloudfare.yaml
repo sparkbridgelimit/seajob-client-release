@@ -134,7 +134,7 @@ jobs:
       - uses: robinraju/release-downloader@v1
         with:
           repository: 'sparkbridgelimit/seajob-client-release'
-          out-file-path: './releases-assets'  # 将下载的文件存储到独立目录
+          out-file-path: 'releases-assets'  # 将下载的文件存储到独立目录
           tag: ${{ env.VERSION }}
 
       - name: List release assets (debug)
