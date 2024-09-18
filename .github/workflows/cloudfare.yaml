@@ -20,12 +20,15 @@ jobs:
           - platform: 'macos-latest'
             args: '--target aarch64-apple-darwin'
             executor_file_name: 'seajob-executor-macos-arm64'
-          # - platform: 'macos-latest'
-          #   args: '--target x86_64-apple-darwin'
-          #   executor_file_name: 'seajob-executor-macos-x64'
-          # - platform: 'windows-latest'
-          #   args: ''
-          #   executor_file_name: 'seajob-executor-windows-x64.exe'
+            bundle_dir: './src-tauri/target/aarch64-apple-darwin/release/bundle/macos'
+          - platform: 'macos-latest'
+            args: '--target x86_64-apple-darwin'
+            executor_file_name: 'seajob-executor-macos-x64'
+            bundle_dir: './src-tauri/target/x86_64-apple-darwin/release/bundle/macos'
+          - platform: 'windows-latest'
+            args: ''
+            executor_file_name: 'seajob-executor-windows-x64.exe'
+            bundle_dir: './src-tauri/target/release/bundle/windows'
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -35,11 +38,88 @@ jobs:
           repository: sparkbridgelimit/seajob-client
           ref: deploy
 
+      - name: install dependencies (ubuntu only)
+        if: matrix.platform == 'ubuntu-22.04' # This must match the platform value defined above.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.0-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: pwd
+        run: pwd
+      - name: List files for debugging
+        run: ls -la src-tauri
+
+      # 删除项目根目录下src-tauri/resources/下的所有资源
+      - name: Remove all resources from src-tauri/resources
+        run: rm -rf src-tauri/resources/*
+      
+      # 修改 src-tauri/tauri.conf.json 中的 tauri.bundle.resources 数组
+      - name: Update tauri.conf.json to set tauri.bundle.resources
+        run: |
+          jq '.tauri.bundle.resources = ["resources/${{ matrix.executor_file_name }}"]' src-tauri/tauri.conf.json > src-tauri/tauri.conf.tmp.json
+          mv src-tauri/tauri.conf.tmp.json src-tauri/tauri.conf.json
+      
+      - uses: robinraju/release-downloader@v1
+        with:
+          repository: 'sparkbridgelimit/seajob-executor'
+          latest: true
+          fileName: ${{ matrix.executor_file_name }}
+          out-file-path: 'src-tauri/resources'
+
+      - name: List src-tauri/resources directory (debug)
+        run: |
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            dir src-tauri/resources
+          else
+            ls -la /Users/runner/work/seajob-client-release
+            ls -la src-tauri/resources
+            pwd
+          fi
+        shell: bash
+
+      - name: Enable corepack
+        run: corepack enable
+
+      - name: install Rust stable 1.80
+        uses: dtolnay/rust-toolchain@1.80
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: install frontend dependencies
+        # If you don't have `beforeBuildCommand` configured you may want to build your frontend here too.
+        run: pnpm install # change this to npm or pnpm depending on which one you use.
+
+      - name: Build Vite + Tauri
+        run: pnpm build
+
+      - uses: tauri-apps/tauri-action@dev
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+        with:
+          tagName: app-v__VERSION__
+          releaseName: '海投助手 v__VERSION__'
+          releaseBody: 'See the assets to download this version and install.'
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}
+
+
       - uses: ryand56/r2-upload-action@latest
         with:
           r2-account-id: ${{ secrets.R2_ACCOUNT_ID }}
           r2-access-key-id: ${{ secrets.R2_ACCESS_KEY_ID }}
           r2-secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           r2-bucket: ${{ secrets.R2_BUCKET }}
-          source-dir: src
-          destination-dir: ./release/${{ github.ref }}
+          source-dir: ${{ matrix.bundle_dir }} # 根据不同平台的构建路径上传产物
+          destination-dir: ./release/${{ github.ref }}/${{ matrix.executor_file_name }}
