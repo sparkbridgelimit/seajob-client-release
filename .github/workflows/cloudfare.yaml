@@ -119,7 +119,7 @@ jobs:
         with:
           repository: 'sparkbridgelimit/seajob-client-release'
           latest: true
-          fileName: ${{ matrix.executor_file_name }}
+          # fileName: ${{ matrix.executor_file_name }}
           out-file-path: 'release'
 
       - uses: ryand56/r2-upload-action@latest
