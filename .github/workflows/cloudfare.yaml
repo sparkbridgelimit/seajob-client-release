@@ -124,7 +124,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
           TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
         with:
-          tagName: app-v__VERSION__
+          tagName: __VERSION__
           releaseName: '海投助手 v__VERSION__'
           releaseBody: 'See the assets to download this version and install. '
           releaseDraft: false
@@ -134,8 +134,8 @@ jobs:
       - uses: robinraju/release-downloader@v1
         with:
           repository: 'sparkbridgelimit/seajob-client-release'
-          latest: true
           out-file-path: './releases-assets'  # 将下载的文件存储到独立目录
+          tag: ${{ env.VERSION }}
 
       - name: List release assets (debug)
         run: |
