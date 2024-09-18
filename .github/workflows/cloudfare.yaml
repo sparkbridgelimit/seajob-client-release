@@ -51,13 +51,26 @@ jobs:
 
       # 删除项目根目录下src-tauri/resources/下的所有资源
       - name: Remove all resources from src-tauri/resources
-        run: rm -rf src-tauri/resources/*
+        run: |
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            Remove-Item -Recurse -Force src-tauri/resources/*
+          else
+            rm -rf src-tauri/resources/*
+          fi
+        shell: bash
       
       # 修改 src-tauri/tauri.conf.json 中的 tauri.bundle.resources 数组
       - name: Update tauri.conf.json to set tauri.bundle.resources
         run: |
-          jq '.tauri.bundle.resources = ["resources/${{ matrix.executor_file_name }}"]' src-tauri/tauri.conf.json > src-tauri/tauri.conf.tmp.json
-          mv src-tauri/tauri.conf.tmp.json src-tauri/tauri.conf.json
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            $json = Get-Content src-tauri/tauri.conf.json | ConvertFrom-Json;
+            $json.tauri.bundle.resources = @("resources/${{ matrix.executor_file_name }}");
+            $json | ConvertTo-Json -Compress | Set-Content src-tauri/tauri.conf.json;
+          else
+            jq '.tauri.bundle.resources = ["resources/${{ matrix.executor_file_name }}"]' src-tauri/tauri.conf.json > src-tauri/tauri.conf.tmp.json;
+            mv src-tauri/tauri.conf.tmp.json src-tauri/tauri.conf.json;
+          fi
+        shell: bash
       
       - uses: robinraju/release-downloader@v1
         with:
@@ -94,10 +107,16 @@ jobs:
           tagName: app-v__VERSION__
           releaseName: '海投助手 v__VERSION__'
           releaseBody: 'See the assets to download this version and install.'
-          releaseDraft: true
+          releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
 
+      - uses: robinraju/release-downloader@v1
+        with:
+          repository: 'sparkbridgelimit/seajob-client-release'
+          latest: true
+          fileName: ${{ matrix.executor_file_name }}
+          out-file-path: 'release'
 
       - uses: ryand56/r2-upload-action@latest
         with:
@@ -105,5 +124,5 @@ jobs:
           r2-access-key-id: ${{ secrets.R2_ACCESS_KEY_ID }}
           r2-secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           r2-bucket: ${{ secrets.R2_BUCKET }}
-          source-dir: ${{ matrix.bundle_dir }} # 根据不同平台的构建路径上传产物
+          source-dir: 'release'
           destination-dir: ./release/${{ github.ref }}/${{ matrix.executor_file_name }}
