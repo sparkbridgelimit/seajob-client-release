@@ -32,19 +32,19 @@ jobs:
 
     runs-on: ${{ matrix.platform }}
     steps:
-      - uses: qoomon/actions--access-token@v3
-        id: access-token
-        with:
-          repository: sparkbridgelimit/seajob-client
-          permissions: |
-            contents: read
+      # - uses: qoomon/actions--access-token@v3
+      #   id: access-token
+      #   with:
+      #     repository: sparkbridgelimit/seajob-client
+      #     permissions: |
+      #       contents: read
 
       - name: Checkout another repository and branch
         uses: actions/checkout@v4
         with:
           repository: sparkbridgelimit/seajob-client
           ref: deploy
-          token: ${{ steps.access-token.outputs.token }}
+          # token: ${{ steps.access-token.outputs.token }}
 
       # 在非 Windows 系统使用 jq 读取版本号
       - name: Read version from tauri.conf.json (Non-Windows)
