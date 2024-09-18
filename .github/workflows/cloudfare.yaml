@@ -29,6 +29,12 @@ jobs:
 
     runs-on: ${{ matrix.platform }}
     steps:
+      - name: Checkout another repository and branch
+        uses: actions/checkout@v4
+        with:
+          repository: sparkbridgelimit/seajob-client
+          ref: deploy
+
       - uses: ryand56/r2-upload-action@latest
         with:
           r2-account-id: ${{ secrets.R2_ACCOUNT_ID }}
