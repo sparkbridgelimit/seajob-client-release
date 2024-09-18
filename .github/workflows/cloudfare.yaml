@@ -132,5 +132,5 @@ jobs:
           r2-access-key-id: ${{ secrets.R2_ACCESS_KEY_ID }}
           r2-secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           r2-bucket: ${{ secrets.R2_BUCKET }}
-          source-dir: '指向上一步下载好的文件目录'
-          destination-dir: ./releases-assets/${{ github.ref }}/${{ matrix.executor_file_name }}
+          source-dir: 'releases-assets'
+          destination-dir: ./release/${{ github.ref }}/${{ matrix.executor_file_name }}
