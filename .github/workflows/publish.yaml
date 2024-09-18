@@ -45,7 +45,8 @@ jobs:
       #   uses: actions/setup-node@v4
       #   with:
       #     node-version: '20'
-      
+      - name: pwd
+        run: pwd
       - name: List files for debugging
         run: ls -la src-tauri
 
