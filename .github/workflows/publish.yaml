@@ -51,7 +51,16 @@ jobs:
           repository: 'sparkbridgelimit/seajob-executor'
           latest: true
           fileName: ${{ matrix.executor_file_name }}
+          out-file-path: 'downloaded-assets'
 
+      - name: List downloaded-assets directory (debug)
+        run: |
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            dir downloaded-assets
+          else
+            ls -la downloaded-assets
+          fi
+        shell: bash
       # - name: Enable corepack
       #   run: corepack enable
 
