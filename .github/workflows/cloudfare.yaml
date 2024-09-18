@@ -49,27 +49,31 @@ jobs:
         with:
           node-version: '20'
 
-      # 删除项目根目录下src-tauri/resources/下的所有资源
-      - name: Remove all resources from src-tauri/resources
+      - name: Remove all resources from src-tauri/resources (Windows)
+        if: ${{ runner.os == 'Windows' }}
         run: |
-          if [[ "$RUNNER_OS" == "Windows" ]]; then
-            Remove-Item -Recurse -Force src-tauri/resources/*
-          else
-            rm -rf src-tauri/resources/*
-          fi
+          Remove-Item -Recurse -Force src-tauri/resources/*
+        shell: pwsh
+
+      - name: Remove all resources from src-tauri/resources (Non-Windows)
+        if: ${{ runner.os != 'Windows' }}
+        run: |
+          rm -rf src-tauri/resources/*
         shell: bash
-      
-      # 修改 src-tauri/tauri.conf.json 中的 tauri.bundle.resources 数组
-      - name: Update tauri.conf.json to set tauri.bundle.resources
+    
+      - name: Update tauri.conf.json (Windows)
+        if: ${{ runner.os == 'Windows' }}
         run: |
-          if [[ "$RUNNER_OS" == "Windows" ]]; then
-            $json = Get-Content src-tauri/tauri.conf.json | ConvertFrom-Json;
-            $json.tauri.bundle.resources = @("resources/${{ matrix.executor_file_name }}");
-            $json | ConvertTo-Json -Compress | Set-Content src-tauri/tauri.conf.json;
-          else
-            jq '.tauri.bundle.resources = ["resources/${{ matrix.executor_file_name }}"]' src-tauri/tauri.conf.json > src-tauri/tauri.conf.tmp.json;
-            mv src-tauri/tauri.conf.tmp.json src-tauri/tauri.conf.json;
-          fi
+          $json = Get-Content src-tauri/tauri.conf.json | ConvertFrom-Json
+          $json.tauri.bundle.resources = @("resources/${{ matrix.executor_file_name }}")
+          $json | ConvertTo-Json -Compress | Set-Content src-tauri/tauri.conf.json
+        shell: pwsh
+
+      - name: Update tauri.conf.json (Non-Windows)
+        if: ${{ runner.os != 'Windows' }}
+        run: |
+          jq '.tauri.bundle.resources = ["resources/${{ matrix.executor_file_name }}"]' src-tauri/tauri.conf.json > src-tauri/tauri.conf.tmp.json
+          mv src-tauri/tauri.conf.tmp.json src-tauri/tauri.conf.json
         shell: bash
       
       - uses: robinraju/release-downloader@v1
