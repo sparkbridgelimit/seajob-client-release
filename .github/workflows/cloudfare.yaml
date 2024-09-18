@@ -38,6 +38,22 @@ jobs:
           repository: sparkbridgelimit/seajob-client
           ref: deploy
 
+      # 在非 Windows 系统使用 jq 读取版本号
+      - name: Read version from tauri.conf.json (Non-Windows)
+        if: runner.os != 'Windows'
+        run: |
+          VERSION=$(jq -r '.package.version' src-tauri/tauri.conf.json)
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+        shell: bash
+      
+      # 在 Windows 系统使用 PowerShell 读取版本号
+      - name: Read version from tauri.conf.json (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          $json = Get-Content src-tauri/tauri.conf.json | ConvertFrom-Json
+          echo "VERSION=$($json.package.version)" >> $env:GITHUB_ENV
+        shell: pwsh
+
       - name: install dependencies (ubuntu only)
         if: matrix.platform == 'ubuntu-22.04' # This must match the platform value defined above.
         run: |
@@ -133,4 +149,4 @@ jobs:
           r2-secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           r2-bucket: ${{ secrets.R2_BUCKET }}
           source-dir: 'releases-assets'
-          destination-dir: ./release/${{ github.ref }}/${{ matrix.executor_file_name }}
+          destination-dir: ./release/${{ env.VERSION }}/${{ matrix.executor_file_name }}
