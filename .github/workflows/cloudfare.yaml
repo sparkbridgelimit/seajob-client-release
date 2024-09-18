@@ -145,4 +145,4 @@ jobs:
           r2-secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           r2-bucket: ${{ secrets.R2_BUCKET }}
           source-dir: 'releases-assets'
-          destination-dir: ./release/${{ env.VERSION }}/${{ matrix.executor_file_name }}
+          destination-dir: ./release/${{ env.VERSION }}
