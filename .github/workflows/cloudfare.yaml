@@ -59,7 +59,9 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           $json = Get-Content src-tauri/tauri.conf.json | ConvertFrom-Json
-          echo "VERSION=$($json.package.version)" >> $env:GITHUB_ENV
+          $version = $json.package.version
+          $version = $version -replace '\\', '/' # 替换反斜杠为斜杠
+          echo "VERSION=$version" >> $env:GITHUB_ENV
         shell: pwsh
 
       - name: install dependencies (ubuntu only)
@@ -160,4 +162,4 @@ jobs:
           r2-secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           r2-bucket: ${{ secrets.R2_BUCKET }}
           source-dir: 'releases-assets'
-          destination-dir: ./release
+          destination-dir: ./release/${{ env.VERSION }}
