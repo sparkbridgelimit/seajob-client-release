@@ -108,6 +108,11 @@ jobs:
           latest: true
           fileName: ${{ matrix.executor_file_name }}
           out-file-path: 'src-tauri/resources'
+      
+      - name: Set executable permissions for seajob-executor (Non-Windows)
+        if: runner.os != 'Windows'
+        run: chmod 755 src-tauri/resources/${{ matrix.executor_file_name }}
+        shell: bash
 
       - name: Enable corepack
         run: corepack enable
